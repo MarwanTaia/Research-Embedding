@@ -22,7 +22,8 @@ import tensorflow as tf
 import scipy.io as sio # Pour charger les données
 from pyDOE import lhs # Latin Hypercube Sampling
 from scipy.interpolate import griddata # Interpolation
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+import time
 
 ################################################################################
 # MACROS
@@ -36,7 +37,7 @@ PLOTS_3D = True
 PLOTS = True
 
 # Marcos pour l'apprentissage
-EPOCHS = 30
+EPOCHS = 50
 LEARING_RATE = 0.001
 # Nombre de couches et de neurones par couche
 # Ici on a 2 entrées (x et t) et 1 sortie (u)
@@ -243,7 +244,23 @@ class PINN:
 
         self.neuralNet.compile(optimizer, loss=self.loss_func, run_eagerly=True)
 
-        self.neuralNet.fit(x=np.concatenate((self.x_u, self.t_u), 1), y=self.u, batch_size=1, epochs=epochs, callbacks=[loss_history, early_stopping], verbose=verbose)
+        # Apprentissage avec affichage du temps d'exécution
+        start_time = time.time()
+        self.neuralNet.fit(
+            x=np.concatenate((self.x_u, self.t_u), 1),
+            y=self.u,
+            batch_size=batch_size,
+            epochs=epochs,
+            callbacks=[loss_history, early_stopping],
+            verbose=verbose,
+            #workers=10,
+            #use_multiprocessing=True,
+            shuffle=False,
+            #steps_per_epoch=len(np.concatenate((self.x_u, self.t_u), 1))*10
+        )
+        elapsed = time.time() - start_time
+        print('Training time: %.4f' % (elapsed))
+            
 
     def predict(self, X_star):
         '''
