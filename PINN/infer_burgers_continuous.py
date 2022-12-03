@@ -97,25 +97,56 @@ class PINN:
 
     def net_u(self, x, t):
         '''
-        Méthode net_u
-        -------------
-        Cette méthode rend la prédiction de la solution u(x,t) par le réseau
-            de neurones.
+        METHODE:
+        --------
+            net_u
+        
+        DESCRIPTION:
+        ------------
+            Cette méthode rend la prédiction de la solution u(x,t) par le réseau
+                de neurones.
+        
+        PARAMETRES:
+        -----------
+            x : Tenseur contenant les coordonnées x des points où on veut
+                prédire la solution.
+            t : Tenseur contenant les coordonnées t des points où on veut
+                prédire la solution.
+
+        RETOUR:
+        -------
+            u : Tenseur contenant la prédiction de la solution aux points
+                (x,t).
         '''
         return self.neuralNet(tf.concat([x,t],1))
 
     def net_f(self, x, t):
         '''
-        Méthode net_f
-        -------------
-        Cette méthode rend la prédiction de la fonction f(x,t) par le réseau
-            de neurones.
+        METHODE:
+        --------
+            net_f
+
+        DESCRIPTION:
+        ------------
+            Cette méthode rend la prédiction de la fonction f(x,t) avec les
+                prédiction de la solution u(x,t) et de sa dérivée partielle
+                par rapport à x et par rapport à t.
+
+        PARAMETRES:
+        -----------
+            x : Tenseur ou array contenant les coordonnées x des points où on
+                veut prédire la fonction f.
+            t : Tenseur ou array contenant les coordonnées t des points où on
+                veut prédire la fonction f.
+
+        RETOUR:
+        -------
+            f : Tenseur contenant la prédiction de la fonction f aux points
+                (x,t).
         '''
-        # On convertit x et t en tens
+        # On convertit x et t en tenseurs
         x = tf.convert_to_tensor(x, dtype=tf.float32)
         t = tf.convert_to_tensor(t, dtype=tf.float32)
-
-
 
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(x)
@@ -127,31 +158,64 @@ class PINN:
 
         del tape
 
-        f = u_t + u*u_x - self.nu*u_xx
-
-        return f
+        return u_t + u*u_x - self.nu*u_xx
 
     def make_NN(self, layers):
         '''
-        Méthode make_NN
-        ---------------
-        Cette méthode construit le réseau de neurones.
+        METHODE:
+        --------
+            make_NN
+        
+        DESCRIPTION:
+        ------------
+            Cette méthode construit le réseau de neurones.
+
+        PARAMETRES:
+        -----------
+            layers : Liste contenant le nombre de neurones par couche.
+                layers[0] = nombre d'entrées
+                layers[-1] = nombre de sorties
+                layers[1:-1] = nombre de neurones par couche cachée
+
+        RETOUR:
+        -------
+            neuralNet : Réseau de neurones construit.
         '''
+        # On définit le modèle
         model = tf.keras.models.Sequential()
+        # On ajoute la première couche cachée
         model.add(tf.keras.layers.Dense(layers[1], input_dim=layers[0], activation='tanh', kernel_initializer='glorot_normal', dtype=tf.float32)) # TOTO ACTIVAT
+        # On ajoute les autres couches cachées
         for i in range(2, len(layers)-1):
             model.add(tf.keras.layers.Dense(layers[i], activation='tanh', kernel_initializer='glorot_normal'))
+        # On ajoute la couche de sortie
         model.add(tf.keras.layers.Dense(layers[-1], activation='linear', kernel_initializer='glorot_normal'))
 
         return model
 
     def loss_func(self,a,b):
+        '''
+        METHODE:
+        --------
+            loss_func
+
+        DESCRIPTION:
+        ------------
+            Cette méthode rend la fonction de perte du réseau de neurones,
+                associée à la méthode PINN au problème de Burgers, pour
+                l'entraînement.
+        '''
+        # On calcule la prédiction de la solution aux points de la condition
+        #  aux limites.
         u_pred = self.net_u(self.x_u, self.t_u)
+        # On calcule la prédiction de la fonction f aux points de la fonction f.
         f_pred = self.net_f(self.x_f, self.t_f)
 
+        # On calcule la fonction de perte
         loss_u = tf.reduce_mean(tf.square(u_pred - self.u))
         loss_f = tf.reduce_mean(tf.square(f_pred))
 
+        # On rend la somme des deux membres de la fonction de perte.
         return loss_u + loss_f
 
     def callback(self, loss):
@@ -161,9 +225,9 @@ class PINN:
         Cette méthode permet d'afficher la valeur de la fonction de coût à
             chaque itération.
         '''
-        # print('Loss: %.3e' % (loss))
+        #print('Losses: %.3e' % (loss))
 
-    def train(self, epochs, batch_size=1, learning_rate=1e-3, patience=10, verbose=True):
+    def train(self, epochs, batch_size=1, learning_rate=1e-3, patience=5, verbose=True):
         '''
         Méthode train
         -------------
