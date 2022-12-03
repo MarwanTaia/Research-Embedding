@@ -36,7 +36,7 @@ PLOTS_3D = True
 PLOTS = True
 
 # Marcos pour l'apprentissage
-EPOCHS = 3
+EPOCHS = 30
 LEARING_RATE = 0.001
 # Nombre de couches et de neurones par couche
 # Ici on a 2 entrées (x et t) et 1 sortie (u)
@@ -102,8 +102,7 @@ class PINN:
         Cette méthode rend la prédiction de la solution u(x,t) par le réseau
             de neurones.
         '''
-        u = self.neuralNet(tf.concat([x,t],1))
-        return u
+        return self.neuralNet(tf.concat([x,t],1))
 
     def net_f(self, x, t):
         '''
