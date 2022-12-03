@@ -31,8 +31,8 @@ import matplotlib.pyplot as plt
 DATA_PATH = 'data/burgers_shock.mat'
 
 # Macros pour les affichages
-VERIF_PLOTS = False
-PLOTS_3D = False
+VERIF_PLOTS = True
+PLOTS_3D = True
 PLOTS = True
 
 # Marcos pour l'apprentissage
