@@ -12,15 +12,51 @@ class SpectralConv1d(nn.Module):
         1D Fourier layer. It does FFT, linear transform, and Inverse FFT.    
         """
 
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.modes1 = modes1  #Number of Fourier modes to multiply, at most floor(N/2) + 1
+        self.in_channels = in_channels # Nombre de canaux d'entrée
+        self.out_channels = out_channels # Nombre de canaux de sortie
+        # Number of Fourier modes to multiply, at most floor(N/2) + 1
+        self.modes1 = modes1 
 
-        self.scale = (1 / (in_channels*out_channels))
+        # Utilisé pour normaliser les poids de la transformation linéaire
+        self.scale = (1 / (in_channels*out_channels)) # Tensor nn.Parameter initialisé avec des poids aléatoires de shape
+        # (in_channels, out_channels, modes1). Ces poids sont les coefficients
+        # de Fourier de la transformation linéaire.
         self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, dtype=torch.cfloat))
+
 
     # Complex multiplication
     def compl_mul1d(self, input, weights):
+        '''
+        METHOD:
+        -------
+        compl_mul1d
+
+        DESCRIPTION:
+        ------------
+        Multiplication complexe de deux tenseurs 1D.
+
+        PARAMETERS:
+        -----------
+        input: Tensor
+            Tensor 3D de taille (batch, in_channel, x), où batch est batchsize,
+            in_channel est le nombre de canaux d'entrée, et x est la longueur
+            du tenseur.
+        weights: Tensor
+            Tensor 3D de taille (in_channel, out_channel, x), où in_channel est
+            le nombre de canaux d'entrée, out_channel est le nombre de canaux
+            de sortie, et x est la longueur du tenseur d'entrée.
+
+        NOTES DE COMPREHENSION:
+        -----------------------
+        Cette fonction utilise la fonction torch.einsum pour effectuer la
+        multiplication complexe. torch.einsum nous permet de spécifier quelles
+        dimensions des tenseurs d'entrée doivent être multipliées ensemble et
+        lesquelles doivent être conservées.
+        Dans ce cas, nous voulons multiplier les dimensions b et i de input
+        avec les dimensions i et o de weights. Nous voulons garder la dimension
+        b de input et la dimension o de weights. Nous obtenons donc un tenseur
+        de sortie de taille (batch, out_channel, x).
+        '''
         # (batch, in_channel, x ), (in_channel, out_channel, x) -> (batch, out_channel, x)
         return torch.einsum("bix,iox->box", input, weights)
 
