@@ -61,13 +61,43 @@ class SpectralConv1d(nn.Module):
         return torch.einsum("bix,iox->box", input, weights)
 
     def forward(self, x):
+        '''
+        METHOD:
+        -------
+        forward
+
+        DESCRIPTION:
+        ------------
+        Forward pass de la couche de convolution spectrale.
+        Cette fonction effectue les opérations suivantes:
+        1. Calculer la FFT 1D du tenseur d'entrée en utilisant torch.fft.rfft.
+            Cette fonction rend un tenseur complexe de taille 
+            (batch, in_channel, x//2 + 1) où la dernière dimension contient
+            les coefficients de Fourier.
+        2. Multiplier les coefficients de Fourier par les poids de la
+            transformation linéaire en utilisant la fonction compl_mul1d.
+        3. Calculer la FFT inverse 1D du tenseur de sortie en utilisant
+            torch.fft.irfft. Cette fonction rend un tenseur de taille
+            (batch, out_channel, x).
+
+        La fonction rend le tenseur de sortie qui est de la même taille que
+        le tenseur d'entrée.
+
+        PARAMETERS:
+        -----------
+        x: Tensor
+            Tensor 3D de taille (batch, in_channel, x), où batch est batchsize,
+            in_channel est le nombre de canaux d'entrée, et x est la longueur
+            du tenseur.
+        '''
+        # Get batch size
         batchsize = x.shape[0]
         #Compute Fourier coeffcients up to factor of e^(- something constant)
         x_ft = torch.fft.rfft(x)
 
         # Multiply relevant Fourier modes 
-        out_ft = torch.zeros(batchsize, self.out_channels,  x.size(-1)//2 + 1,  device=x.device, dtype=torch.cfloat)
-        out_ft[:, :, :self.modes1] = self.compl_mul1d(x_ft[:, :, :self.modes1], self.weights1)
+        out_ft = torch.zeros(batchsize, self.out_channels,  x.size(-1)//2 + 1,  device=x.device, dtype=torch.cfloat) # Tensor de sortie
+        out_ft[:, :, :self.modes1] = self.compl_mul1d(x_ft[:, :, :self.modes1], self.weights1) # Multiplication complexe
 
         #Return to physical space
         x = torch.fft.irfft(out_ft, n=x.size(-1))
