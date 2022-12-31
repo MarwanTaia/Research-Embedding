@@ -150,6 +150,29 @@ class FNO1d(nn.Module):
         self.fc2 = nn.Linear(128, num_channels)
 
     def forward(self, x, grid):
+        '''
+        FONCTION:
+        ---------
+        forward
+
+        DESCRIPTION:
+        ------------
+
+
+        PARAMETERS:
+        -----------
+        x: Tensor
+            Tensor 3D de taille (batch, x, c=2), où batch est batchsize,
+            x est la longueur du tenseur, et c=2 est le nombre de canaux d'entrée.
+
+        grid: Tensor
+            Tensor 3D de taille (batch, x, c=1), où batch est batchsize,
+            x est la longueur du tenseur, et c=1 est le nombre de canaux d'entrée.
+            Ce tensor représente la position spatiale de chaque point de x dans
+            le domaine.
+        '''
+
+
         # x dim = [b, x1, t*v]
         x = torch.cat((x, grid), dim=-1)
         x = self.fc0(x)
