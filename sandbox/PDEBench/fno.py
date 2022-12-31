@@ -121,19 +121,31 @@ class FNO1d(nn.Module):
         """
 
         self.modes1 = modes
-        self.width = width
+        self.width = width # La largeur des couches intermédiaires
         self.padding = 2 # pad the domain if input is non-periodic
+        # self.fc0 est une couche linéaire (fully connected) qui transforme le
+        # tenseur d'entrée de taille (batch, x, c=2) en un tenseur de taille
+        # (batch, x, c=width) [donc le "lifting" de l'entrée en dim de channel].
         self.fc0 = nn.Linear(initial_step*num_channels+1, self.width) # input channel is 2: (a(x), x)
 
+        # self.conv est une couche de convolution spectrale qui effectue la
+        # transformation linéaire u' = (W + K)(u) où W est une transformation
+        # linéaire et K est une opération intégrale.
         self.conv0 = SpectralConv1d(self.width, self.width, self.modes1)
         self.conv1 = SpectralConv1d(self.width, self.width, self.modes1)
         self.conv2 = SpectralConv1d(self.width, self.width, self.modes1)
         self.conv3 = SpectralConv1d(self.width, self.width, self.modes1)
+
+        # self.w est une couche de convolution 1D qui définie la transformation
+        # linéaire W.
         self.w0 = nn.Conv1d(self.width, self.width, 1)
         self.w1 = nn.Conv1d(self.width, self.width, 1)
         self.w2 = nn.Conv1d(self.width, self.width, 1)
         self.w3 = nn.Conv1d(self.width, self.width, 1)
 
+        # self.fc1 et self.fc2 sont des couches linéaires qui projettent le
+        # tenseur de sortie de la couche de convolution spectrale de taille
+        # (batch, x, c=width) en un tenseur de taille (batch, x, c=1).
         self.fc1 = nn.Linear(self.width, 128)
         self.fc2 = nn.Linear(128, num_channels)
 
